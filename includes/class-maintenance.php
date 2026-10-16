@@ -132,7 +132,7 @@ class CWV_Speed_Maintenance {
 		wp_safe_redirect(
 			add_query_arg(
 				array(
-					'page'      => 'cwv-speed',
+					'page'      => 'cwv-speed-tools',
 					'cwv_clean' => rawurlencode( $task ),
 					'cwv_count' => $count,
 				),

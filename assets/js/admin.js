@@ -1,4 +1,29 @@
 (function () {
+	var copy = document.getElementById("cwv-copy-nginx");
+	if (copy) {
+		copy.addEventListener("click", function () {
+			var area = document.getElementById("cwv-nginx");
+			var label = copy.textContent;
+			if (!area) {
+				return;
+			}
+			var done = function () {
+				copy.textContent = window.cwvSpeed && cwvSpeed.copied ? cwvSpeed.copied : "Copied";
+				window.setTimeout(function () {
+					copy.textContent = label;
+				}, 1600);
+			};
+			if (navigator.clipboard && navigator.clipboard.writeText) {
+				navigator.clipboard.writeText(area.value).then(done);
+				return;
+			}
+			area.focus();
+			area.select();
+			document.execCommand("copy");
+			done();
+		});
+	}
+
 	var button = document.getElementById("cwv-convert");
 	if (!button || typeof cwvSpeed === "undefined") {
 		return;

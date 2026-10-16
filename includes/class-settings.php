@@ -109,14 +109,24 @@ class CWV_Speed_Settings {
 	/**
 	 * Sanitize a posted settings array.
 	 *
+	 * Keys outside $keys stay as they are, so saving one admin page does not clear the others.
+	 *
 	 * @param array<string, mixed> $input Raw input.
+	 * @param string[]             $keys Keys this request is allowed to change.
 	 * @return array<string, mixed>
 	 */
-	public function sanitize( array $input ) {
+	public function sanitize( array $input, array $keys = array() ) {
 		$defaults = self::defaults();
-		$clean    = $defaults;
+		$clean    = wp_parse_args( $this->all(), $defaults );
+		if ( ! $keys ) {
+			$keys = array_keys( $defaults );
+		}
 
-		foreach ( $defaults as $key => $default ) {
+		foreach ( $keys as $key ) {
+			if ( ! array_key_exists( $key, $defaults ) || 'preset' === $key ) {
+				continue;
+			}
+			$default = $defaults[ $key ];
 			if ( is_bool( $default ) ) {
 				$clean[ $key ] = ! empty( $input[ $key ] );
 				continue;
@@ -149,12 +159,20 @@ class CWV_Speed_Settings {
 			$clean['speculation'] = 'prerender-moderate';
 		}
 
-		$clean['critical_css']  = self::sanitize_css( $clean['critical_css'] );
-		$clean['lcp_image_url'] = esc_url_raw( $clean['lcp_image_url'] );
-		$clean['css_excludes']  = sanitize_textarea_field( $clean['css_excludes'] );
-		$clean['js_excludes']   = sanitize_textarea_field( $clean['js_excludes'] );
-		$clean['delay_patterns'] = sanitize_textarea_field( $clean['delay_patterns'] );
-		$clean['preload_fonts'] = self::sanitize_url_list( $clean['preload_fonts'] );
+		if ( in_array( 'critical_css', $keys, true ) ) {
+			$clean['critical_css'] = self::sanitize_css( $clean['critical_css'] );
+		}
+		if ( in_array( 'lcp_image_url', $keys, true ) ) {
+			$clean['lcp_image_url'] = esc_url_raw( $clean['lcp_image_url'] );
+		}
+		foreach ( array( 'css_excludes', 'js_excludes', 'delay_patterns' ) as $text_key ) {
+			if ( in_array( $text_key, $keys, true ) ) {
+				$clean[ $text_key ] = sanitize_textarea_field( $clean[ $text_key ] );
+			}
+		}
+		if ( in_array( 'preload_fonts', $keys, true ) ) {
+			$clean['preload_fonts'] = self::sanitize_url_list( $clean['preload_fonts'] );
+		}
 		$clean['preset']        = 'custom';
 
 		return $clean;

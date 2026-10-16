@@ -2,10 +2,11 @@
 /**
  * Plugin Name: CWV Speed
  * Description: Speeds up WordPress for Core Web Vitals and Lighthouse. Page cache, LCP preload, modern images, delayed third-party tags, and safe WordPress cleanup.
- * Version: 1.0.1
+ * Version: 1.0.2
  * Requires at least: 6.4
  * Requires PHP: 7.4
- * Author: CWV Speed
+ * Author: OG Web Solutions
+ * Author URI: https://ogwebsolutions.com
  * License: GPL-2.0-or-later
  * License URI: https://www.gnu.org/licenses/gpl-2.0.html
  * Text Domain: wp-cwv-speed
@@ -17,7 +18,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 	exit;
 }
 
-define( 'CWV_SPEED_VERSION', '1.0.1' );
+define( 'CWV_SPEED_VERSION', '1.0.2' );
 define( 'CWV_SPEED_FILE', __FILE__ );
 define( 'CWV_SPEED_DIR', plugin_dir_path( __FILE__ ) );
 define( 'CWV_SPEED_URL', plugin_dir_url( __FILE__ ) );
