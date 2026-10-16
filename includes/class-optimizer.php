@@ -415,7 +415,8 @@ JS;
 		$file = CWV_Speed_Cache::dir() . '/min/' . $hash . '.css';
 		if ( ! is_file( $file ) ) {
 			wp_mkdir_p( dirname( $file ) );
-			file_put_contents( $file, CWV_Speed_Minifier::font_display( $raw ), LOCK_EX );
+			$css = $this->absolutize_css_urls( CWV_Speed_Minifier::font_display( $raw ), $src );
+			file_put_contents( $file, $css, LOCK_EX );
 		}
 		return content_url( 'cache/cwv-speed/min/' . $hash . '.css' );
 	}
@@ -518,7 +519,7 @@ JS;
 				return $src;
 			}
 			if ( 'css' === $type ) {
-				$min = $raw;
+				$min = $this->absolutize_css_urls( $raw, $src );
 				if ( CWV_Speed_Settings::instance()->enabled( 'font_display_swap' ) ) {
 					$min = CWV_Speed_Minifier::font_display( $min );
 				}
@@ -536,6 +537,73 @@ JS;
 		}
 
 		return content_url( 'cache/cwv-speed/min/' . $hash . '.' . $type );
+	}
+
+	/**
+	 * Point relative CSS urls at the original stylesheet directory.
+	 *
+	 * A cached copy lives under wp-content/cache, so url(assets/fonts/a.woff2)
+	 * would otherwise request a file that is not there.
+	 *
+	 * @param string $css Stylesheet contents.
+	 * @param string $src Original stylesheet URL.
+	 * @return string
+	 */
+	private function absolutize_css_urls( $css, $src ) {
+		$src = strtok( html_entity_decode( (string) $src ), '?' );
+		if ( ! is_string( $src ) || '' === $src ) {
+			return $css;
+		}
+		$base = preg_replace( '#/[^/]*$#', '/', $src );
+		if ( ! is_string( $base ) ) {
+			return $css;
+		}
+		$updated = preg_replace_callback(
+			'#url\(\s*(["\']?)([^"\')]+)\1\s*\)#i',
+			function ( $match ) use ( $base ) {
+				$url = trim( $match[2] );
+				if ( '' === $url || 0 === strpos( $url, 'data:' ) || '#' === substr( $url, 0, 1 ) || false !== strpos( $url, '://' ) || 0 === strpos( $url, '//' ) || '/' === substr( $url, 0, 1 ) ) {
+					return $match[0];
+				}
+				return 'url(' . $match[1] . $this->resolve_relative_url( $base, $url ) . $match[1] . ')';
+			},
+			$css
+		);
+		return is_string( $updated ) ? $updated : $css;
+	}
+
+	/**
+	 * Resolve a relative URL against a directory URL.
+	 *
+	 * @param string $base Directory URL, with a trailing slash.
+	 * @param string $relative Path from that directory.
+	 * @return string
+	 */
+	private function resolve_relative_url( $base, $relative ) {
+		$prefix = '';
+		$path   = $base;
+		if ( preg_match( '#^(https?:)//#i', $base, $scheme ) ) {
+			$prefix = $scheme[1] . '//';
+			$path   = substr( $base, strlen( $prefix ) );
+		}
+		$segments = explode( '/', $path . $relative );
+		$out      = array();
+		foreach ( $segments as $index => $segment ) {
+			if ( '' === $segment || '.' === $segment ) {
+				if ( '' === $segment && 0 === $index ) {
+					$out[] = '';
+				}
+				continue;
+			}
+			if ( '..' === $segment ) {
+				if ( count( $out ) > 1 ) {
+					array_pop( $out );
+				}
+				continue;
+			}
+			$out[] = $segment;
+		}
+		return $prefix . implode( '/', $out );
 	}
 
 	/**

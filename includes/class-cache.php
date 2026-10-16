@@ -190,12 +190,12 @@ class CWV_Speed_Cache {
 	}
 
 	/**
-	 * Delete cached pages and minified copies.
+	 * Delete cached pages, minified copies, and self-hosted font files.
 	 *
 	 * @return void
 	 */
 	public function purge() {
-		foreach ( array( 'pages', 'min' ) as $folder ) {
+		foreach ( array( 'pages', 'min', 'fonts' ) as $folder ) {
 			$this->empty_dir( self::dir() . '/' . $folder );
 		}
 	}

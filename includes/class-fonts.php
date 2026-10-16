@@ -178,7 +178,7 @@ class CWV_Speed_Fonts {
 		$file = $dir . '/' . $key . '.css';
 		if ( is_readable( $file ) ) {
 			$cached = file_get_contents( $file );
-			if ( is_string( $cached ) && '' !== $cached ) {
+			if ( is_string( $cached ) && '' !== $cached && $this->cached_font_files_exist( $cached ) ) {
 				$this->remember_preload( $cached );
 				return $cached;
 			}
@@ -219,6 +219,25 @@ class CWV_Speed_Fonts {
 		file_put_contents( $file, $css, LOCK_EX );
 		$this->remember_preload( $css );
 		return $css;
+	}
+
+	/**
+	 * Whether every local font file named in a cached stylesheet is still on disk.
+	 *
+	 * @param string $css Cached CSS.
+	 * @return bool
+	 */
+	private function cached_font_files_exist( $css ) {
+		if ( ! preg_match_all( '#/cache/cwv-speed/fonts/([A-Za-z0-9]+\.(?:woff2|woff|ttf))#', $css, $matches ) ) {
+			return true;
+		}
+		$dir = CWV_Speed_Cache::dir() . '/fonts/';
+		foreach ( $matches[1] as $name ) {
+			if ( ! is_file( $dir . $name ) ) {
+				return false;
+			}
+		}
+		return true;
 	}
 
 	/**
